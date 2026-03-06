@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Ads Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #080c10;
+  --bg2: #0d1117;
+  --bg3: #161b22;
+  --bg4: #1c2128;
+  --border: #21262d;
+  --border2: #30363d;
+  --green: #3fb950;
+  --green-dim: rgba(63,185,80,0.15);
+  --red: #f85149;
+  --red-dim: rgba(248,81,73,0.15);
+  --amber: #d29922;
+  --amber-dim: rgba(210,153,34,0.15);
+  --blue: #58a6ff;
+  --blue-dim: rgba(88,166,255,0.12);
+  --purple: #bc8cff;
+  --purple-dim: rgba(188,140,255,0.12);
+  --teal: #39d353;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #484f58;
+  --card: #0d1117;
+  --font-ui: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { background:var(--bg); color:var(--text); font-family:var(--font-ui); font-size:14px; line-height:1.5; min-height:100vh; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg2); }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+
+/* LAYOUT */
+.app { display:flex; flex-direction:column; min-height:100vh; }
+
+/* TOP BAR */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:52px; background:var(--bg2); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; gap:16px; }
+.topbar-brand { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.brand-icon { width:28px; height:28px; background:linear-gradient(135deg,var(--blue),var(--purple)); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.brand-name { font-weight:700; font-size:0.9rem; letter-spacing:-0.02em; color:var(--text); }
+.brand-sub { font-size:0.65rem; color:var(--text2); font-family:var(--font-mono); }
+.topbar-nav { display:flex; gap:2px; flex:1; justify-content:center; }
+.topbar-nav a { color:var(--text2); text-decoration:none; font-size:0.78rem; padding:5px 12px; border-radius:6px; transition:all 0.15s; white-space:nowrap; font-weight:500; }
+.topbar-nav a:hover, .topbar-nav a.active { color:var(--text); background:var(--bg3); }
+.topbar-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.client-selector { background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:5px 10px; border-radius:var(--radius); font-family:var(--font-ui); font-size:0.78rem; cursor:pointer; outline:none; }
+.btn { padding:6px 14px; border-radius:var(--radius); font-family:var(--font-ui); font-size:0.78rem; font-weight:600; cursor:pointer; border:none; transition:all 0.15s; }
+.btn-primary { background:var(--blue); color:#000; }
+.btn-primary:hover { opacity:0.85; }
+.btn-ghost { background:transparent; border:1px solid var(--border2); color:var(--text2); }
+.btn-ghost:hover { border-color:var(--blue); color:var(--blue); }
+.btn-sm { padding:4px 10px; font-size:0.72rem; }
+.btn-danger { background:var(--red-dim); border:1px solid var(--red); color:var(--red); }
+
+/* MAIN */
+main { flex:1; }
+
+/* ============ UPLOAD SCREEN ============ */
+#uploadScreen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 52px); padding:40px 24px; }
+.upload-hero { text-align:center; max-width:600px; margin-bottom:48px; }
+.upload-hero h1 { font-size:2rem; font-weight:700; letter-spacing:-0.03em; margin-bottom:12px; }
+.upload-hero h1 span { background:linear-gradient(90deg,var(--blue),var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.upload-hero p { color:var(--text2); font-size:0.9rem; line-height:1.7; }
+
+.upload-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:820px; margin-bottom:24px; }
+.upload-zone { background:var(--bg2); border:2px dashed var(--border2); border-radius:var(--radius-lg); padding:28px 20px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; }
+.upload-zone:hover, .upload-zone.dragover { border-color:var(--blue); background:var(--blue-dim); }
+.upload-zone.uploaded { border-color:var(--green); border-style:solid; background:var(--green-dim); }
+.upload-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.upload-icon { font-size:1.8rem; margin-bottom:8px; }
+.upload-zone h3 { font-size:0.85rem; font-weight:600; margin-bottom:4px; }
+.upload-zone p { font-size:0.72rem; color:var(--text2); }
+.upload-zone .file-count { font-size:0.7rem; color:var(--green); margin-top:6px; font-weight:600; }
+.upload-zone-wide { grid-column:1/-1; }
+
+.upload-client-setup { width:100%; max-width:820px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; margin-bottom:24px; }
+.upload-client-setup h3 { font-size:0.9rem; font-weight:700; margin-bottom:16px; color:var(--text2); text-transform:uppercase; letter-spacing:0.06em; font-size:0.72rem; }
+.client-form-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; }
+.form-field label { display:block; font-size:0.65rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px; font-weight:600; }
+.form-field input, .form-field select { width:100%; background:var(--bg3); border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:var(--radius); font-family:var(--font-ui); font-size:0.8rem; outline:none; transition:border-color 0.15s; }
+.form-field input:focus, .form-field select:focus { border-color:var(--blue); }
+.saved-clients { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.saved-client-chip { background:var(--bg3); border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:0.72rem; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:6px; }
+.saved-client-chip:hover { border-color:var(--blue); color:var(--blue); }
+.saved-client-chip.active { background:var(--blue-dim); border-color:var(--blue); color:var(--blue); }
+.chip-del { color:var(--text3); font-size:0.8rem; }
+.chip-del:hover { color:var(--red); }
+
+.upload-actions { display:flex; gap:12px; }
+.btn-analyze { background:linear-gradient(135deg,var(--blue),var(--purple)); color:white; border:none; padding:12px 32px; border-radius:var(--radius); font-family:var(--font-ui); font-size:0.9rem; font-weight:700; cursor:pointer; transition:opacity 0.2s; letter-spacing:-0.01em; }
+.btn-analyze:hover { opacity:0.9; }
+.btn-analyze:disabled { opacity:0.4; cursor:not-allowed; }
+
+.upload-tips { max-width:820px; width:100%; }
+.upload-tips h4 { font-size:0.72rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
+.tips-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.tip { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:12px; }
+.tip-icon { font-size:1rem; margin-bottom:5px; }
+.tip h5 { font-size:0.75rem; font-weight:600; margin-bottom:3px; }
+.tip p { font-size:0.68rem; color:var(--text2); line-height:1.5; }
+
+/* ============ DASHBOARD SCREEN ============ */
+#dashboardScreen { display:none; }
+.dash-header { background:var(--bg2); border-bottom:1px solid var(--border); padding:16px 24px; display:flex; align-items:center; justify-content:space-between; }
+.dash-header-left h2 { font-size:1.1rem; font-weight:700; letter-spacing:-0.02em; }
+.dash-header-left .dash-meta { font-size:0.72rem; color:var(--text2); font-family:var(--font-mono); margin-top:2px; }
+.dash-header-right { display:flex; gap:8px; align-items:center; }
+.alert-pill { background:var(--red-dim); border:1px solid var(--red); color:var(--red); padding:4px 12px; border-radius:20px; font-size:0.7rem; font-weight:600; }
+.ok-pill { background:var(--green-dim); border:1px solid var(--green); color:var(--green); padding:4px 12px; border-radius:20px; font-size:0.7rem; font-weight:600; }
+
+.dash-body { padding:24px; display:flex; flex-direction:column; gap:24px; }
+
+/* SECTIONS */
+.section-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text2); font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* KPI CARDS */
+.kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+.kpi { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; position:relative; overflow:hidden; }
+.kpi::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+.kpi.c-green::after { background:var(--green); }
+.kpi.c-red::after { background:var(--red); }
+.kpi.c-amber::after { background:var(--amber); }
+.kpi.c-blue::after { background:var(--blue); }
+.kpi.c-purple::after { background:var(--purple); }
+.kpi-label { font-size:0.65rem; color:var(--text2); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; margin-bottom:8px; }
+.kpi-val { font-size:1.6rem; font-weight:700; letter-spacing:-0.02em; line-height:1; margin-bottom:6px; font-family:var(--font-mono); }
+.kpi-sub { font-size:0.65rem; color:var(--text2); }
+.kpi-delta { font-size:0.68rem; font-weight:600; margin-top:4px; }
+.up-bad { color:var(--red); }
+.up-good { color:var(--green); }
+.dn-bad { color:var(--red); }
+.dn-good { color:var(--green); }
+
+/* GRID LAYOUTS */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+.grid-2-1 { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+.grid-1-2 { display:grid; grid-template-columns:1fr 2fr; gap:16px; }
+
+/* CHART CARDS */
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; }
+.card-title { font-size:0.82rem; font-weight:700; margin-bottom:2px; }
+.card-sub { font-size:0.68rem; color:var(--text2); margin-bottom:16px; }
+.chart-wrap { position:relative; }
+
+/* TABLES */
+.table-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+.table-card-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.table-card-header h3 { font-size:0.85rem; font-weight:700; }
+.table-scroll { overflow-x:auto; max-height:420px; overflow-y:auto; }
+table { width:100%; border-collapse:collapse; font-size:0.75rem; }
+thead { position:sticky; top:0; z-index:2; }
+thead th { background:var(--bg3); color:var(--text2); text-transform:uppercase; letter-spacing:0.07em; font-size:0.62rem; font-weight:600; padding:10px 14px; text-align:left; white-space:nowrap; cursor:pointer; user-select:none; }
+thead th:hover { color:var(--text); }
+tbody tr { border-top:1px solid var(--border); }
+tbody tr:hover { background:rgba(255,255,255,0.02); }
+tbody td { padding:9px 14px; white-space:nowrap; vertical-align:middle; }
+.sort-asc::after { content:' ↑'; color:var(--blue); }
+.sort-desc::after { content:' ↓'; color:var(--blue); }
+
+/* TIER INDICATORS */
+.tier-bar { width:3px; height:100%; position:absolute; left:0; top:0; }
+tr.t1 { border-left:3px solid var(--green); }
+tr.t2 { border-left:3px solid var(--amber); }
+tr.t3 { border-left:3px solid var(--red); }
+tr.t4 { border-left:3px solid var(--text3); }
+
+/* BADGES */
+.badge { display:inline-flex; align-items:center; gap:4px; font-size:0.62rem; padding:2px 8px; border-radius:20px; font-weight:600; white-space:nowrap; }
+.b-green { background:var(--green-dim); color:var(--green); }
+.b-red { background:var(--red-dim); color:var(--red); }
+.b-amber { background:var(--amber-dim); color:var(--amber); }
+.b-blue { background:var(--blue-dim); color:var(--blue); }
+.b-purple { background:var(--purple-dim); color:var(--purple); }
+.b-grey { background:rgba(72,79,88,0.3); color:var(--text2); }
+
+/* VALUES */
+.val-g { color:var(--green); font-weight:600; }
+.val-r { color:var(--red); font-weight:600; }
+.val-a { color:var(--amber); font-weight:600; }
+.val-b { color:var(--blue); }
+
+/* RECOMMENDATIONS */
+.recs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+.rec-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px; position:relative; padding-left:22px; }
+.rec-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:var(--radius-lg) 0 0 var(--radius-lg); }
+.rec-card.crit::before { background:var(--red); }
+.rec-card.warn::before { background:var(--amber); }
+.rec-card.oppo::before { background:var(--green); }
+.rec-card.info::before { background:var(--blue); }
+.rec-priority { font-size:0.6rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text2); margin-bottom:6px; font-weight:600; }
+.rec-title { font-size:0.88rem; font-weight:700; margin-bottom:10px; line-height:1.3; }
+.rec-row { margin-bottom:7px; }
+.rec-row-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text2); margin-bottom:2px; font-weight:600; }
+.rec-row-text { font-size:0.72rem; color:#c9d1d9; line-height:1.6; }
+.rec-row-text strong { color:var(--text); }
+.rec-tags { margin-top:10px; display:flex; flex-wrap:wrap; gap:5px; }
+
+/* PMAX WARNING */
+.pmax-note { background:var(--purple-dim); border:1px solid rgba(188,140,255,0.3); border-radius:var(--radius); padding:10px 14px; font-size:0.72rem; color:#c9d1d9; margin-bottom:16px; }
+.pmax-note strong { color:var(--purple); }
+
+/* BREAKEVEN CALC */
+.calc-panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; }
+.calc-inputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+.calc-result { background:var(--bg3); border-radius:var(--radius); padding:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; border:1px solid var(--border); }
+.calc-result-item .r-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text2); margin-bottom:4px; font-weight:600; }
+.calc-result-item .r-val { font-size:1.1rem; font-weight:700; font-family:var(--font-mono); }
+.breakeven-chart-wrap { margin-top:16px; }
+
+/* FORECAST */
+.forecast-panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; }
+.forecast-inputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
+.forecast-output { display:none; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:12px; }
+.forecast-output.show { display:block; }
+.fo-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:12px; }
+.fo-item .fo-label { font-size:0.6rem; text-transform:uppercase; color:var(--text2); margin-bottom:3px; letter-spacing:0.08em; font-weight:600; }
+.fo-item .fo-val { font-size:1rem; font-weight:700; font-family:var(--font-mono); }
+.fo-note { font-size:0.7rem; color:var(--amber); border-top:1px solid var(--border); padding-top:10px; line-height:1.6; }
+
+/* HEALTH SCORE */
+.health-layout { display:grid; grid-template-columns:220px 1fr; gap:24px; align-items:start; }
+.health-gauge { display:flex; flex-direction:column; align-items:center; }
+.health-num { font-family:var(--font-mono); font-weight:700; font-size:2.8rem; margin-top:-60px; }
+.health-label { font-size:0.68rem; color:var(--text2); margin-top:4px; }
+.health-bars { display:flex; flex-direction:column; gap:10px; }
+.hb-row { display:flex; align-items:center; gap:10px; }
+.hb-name { font-size:0.7rem; color:var(--text2); width:180px; flex-shrink:0; }
+.hb-track { flex:1; height:5px; background:var(--bg3); border-radius:3px; overflow:hidden; }
+.hb-fill { height:100%; border-radius:3px; }
+.hb-val { font-size:0.7rem; font-weight:700; width:30px; text-align:right; font-family:var(--font-mono); }
+.health-actions { margin-top:16px; padding:12px 14px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); font-size:0.7rem; color:var(--text2); line-height:1.7; }
+.health-actions strong { color:var(--amber); }
+
+/* SEARCH TERMS SECTION */
+.search-flags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.search-flag { background:var(--red-dim); border:1px solid rgba(248,81,73,0.3); border-radius:6px; padding:4px 10px; font-size:0.7rem; font-family:var(--font-mono); color:var(--red); }
+.search-flag.ok { background:var(--green-dim); border-color:rgba(63,185,80,0.3); color:var(--green); }
+
+/* COMPETITIVE TABLE */
+.comp-badge { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
+
+/* EMPTY STATE */
+.empty-state { text-align:center; padding:40px; color:var(--text2); }
+.empty-state .ei { font-size:2rem; margin-bottom:8px; }
+.empty-state p { font-size:0.8rem; }
+
+/* TIME TREND */
+.trend-up-bad { color:var(--red); }
+.trend-dn-good { color:var(--green); }
+
+/* FOOTER */
+footer { background:var(--bg2); border-top:1px solid var(--border); padding:12px 24px; font-size:0.68rem; color:var(--text3); display:flex; justify-content:space-between; }
+
+/* RESPONSIVE */
+@media(max-width:1100px) { .grid-2, .grid-3, .grid-2-1, .grid-1-2 { grid-template-columns:1fr; } }
+@media(max-width:768px) { .topbar-nav { display:none; } .client-form-grid { grid-template-columns:1fr 1fr; } .upload-grid { grid-template-columns:1fr; } .tips-grid { grid-template-columns:1fr; } }
+
+/* FADE IN */
+.fade { opacity:0; transform:translateY(12px); transition:opacity 0.4s,transform 0.4s; }
+.fade.in { opacity:1; transform:none; }
+
+/* MODAL */
+.modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; align-items:center; justify-content:center; }
+.modal-bg.show { display:flex; }
+.modal { background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius-lg); padding:28px; max-width:480px; width:100%; margin:16px; }
+.modal h3 { font-size:1rem; font-weight:700; margin-bottom:16px; }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOP BAR -->
+<nav class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">📊</div>
+    <div>
+      <div class="brand-name">AdIntel · Google</div>
+      <div class="brand-sub">Shadow Operator Framework</div>
+    </div>
+  </div>
+  <div class="topbar-nav">
+    <a href="#kpis" class="active">Overview</a>
+    <a href="#campaigns">Campaigns</a>
+    <a href="#search">Search Terms</a>
+    <a href="#competitive">Competitive</a>
+    <a href="#recs">Recommendations</a>
+    <a href="#forecast">Forecast</a>
+    <a href="#health">Health</a>
+  </div>
+  <div class="topbar-right">
+    <select class="client-selector" id="clientSwitcher" onchange="switchClient(this.value)">
+      <option value="">— Select Client —</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="showUpload()">↑ New Data</button>
+  </div>
+</nav>
+
+<!-- ============ UPLOAD SCREEN ============ -->
+<div id="uploadScreen">
+  <div class="upload-hero fade">
+    <h1>Google Ads <span>Intelligence</span> Dashboard</h1>
+    <p>Upload your Google Ads CSV exports, set your client targets, and get a full Shadow Operator analysis instantly. All data stays in your browser — nothing is sent anywhere.</p>
+  </div>
+
+  <!-- CLIENT SETUP -->
+  <div class="upload-client-setup fade">
+    <h3>Client Profile</h3>
+    <div class="client-form-grid">
+      <div class="form-field">
+        <label>Client Name</label>
+        <input type="text" id="clientName" placeholder="e.g. The Salty Fox">
+      </div>
+      <div class="form-field">
+        <label>Currency</label>
+        <select id="clientCurrency">
+          <option value="A$">AUD (A$)</option>
+          <option value="$">USD ($)</option>
+          <option value="£">GBP (£)</option>
+          <option value="€">EUR (€)</option>
+          <option value="R">ZAR (R)</option>
+          <option value="NZ$">NZD (NZ$)</option>
+          <option value="CA$">CAD (CA$)</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Target ROAS (%)</label>
+        <input type="number" id="clientROAS" placeholder="e.g. 400">
+      </div>
+      <div class="form-field">
+        <label>Target CAC / CPA</label>
+        <input type="number" id="clientCAC" placeholder="e.g. 25">
+      </div>
+      <div class="form-field">
+        <label>Avg Order Value (AOV)</label>
+        <input type="number" id="clientAOV" placeholder="e.g. 99.54">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="saveClient()">💾 Save Client</button>
+      <span style="font-size:0.7rem;color:var(--text2)">Saved clients:</span>
+      <div class="saved-clients" id="savedClients"></div>
+    </div>
+  </div>
+
+  <!-- FILE UPLOADS -->
+  <div class="upload-grid fade" style="width:100%;max-width:820px">
+    <div class="upload-zone" id="zone-campaigns">
+      <input type="file" accept=".csv" multiple onchange="handleFiles(event,'campaigns')">
+      <div class="upload-icon">📁</div>
+      <h3>Campaigns CSV</h3>
+      <p>Export from: Reports → Predefined → Campaigns</p>
+      <div class="file-count" id="count-campaigns"></div>
+    </div>
+    <div class="upload-zone" id="zone-timeseries">
+      <input type="file" accept=".csv" multiple onchange="handleFiles(event,'timeseries')">
+      <div class="upload-icon">📈</div>
+      <h3>Time Series / Day CSV</h3>
+      <p>Day-by-day performance data for trend charts</p>
+      <div class="file-count" id="count-timeseries"></div>
+    </div>
+    <div class="upload-zone" id="zone-searches">
+      <input type="file" accept=".csv" multiple onchange="handleFiles(event,'searches')">
+      <div class="upload-icon">🔍</div>
+      <h3>Search Terms CSV</h3>
+      <p>Search terms report — finds off-category spend</p>
+      <div class="file-count" id="count-searches"></div>
+    </div>
+    <div class="upload-zone" id="zone-changes">
+      <input type="file" accept=".csv" multiple onchange="handleFiles(event,'changes')">
+      <div class="upload-icon">🔄</div>
+      <h3>Biggest Changes / Comparison CSV</h3>
+      <p>Period-over-period comparison data</p>
+      <div class="file-count" id="count-changes"></div>
+    </div>
+    <div class="upload-zone upload-zone-wide" id="zone-extra">
+      <input type="file" accept=".csv" multiple onchange="handleFiles(event,'extra')">
+      <div class="upload-icon">📎</div>
+      <h3>Any Other CSVs (Optional)</h3>
+      <p>Keywords, demographics, devices, networks, auction insights — all auto-detected</p>
+      <div class="file-count" id="count-extra"></div>
+    </div>
+  </div>
+
+  <div class="upload-actions fade">
+    <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()" disabled>
+      ⚡ Analyse Account
+    </button>
+    <button class="btn btn-ghost" onclick="loadSampleData()">Load Sample Data</button>
+  </div>
+
+  <div class="upload-tips fade" style="margin-top:24px">
+    <h4>How to export from Google Ads</h4>
+    <div class="tips-grid">
+      <div class="tip">
+        <div class="tip-icon">1️⃣</div>
+        <h5>Set Your Date Range</h5>
+        <p>In Google Ads, set the date range you want to analyse before exporting any reports.</p>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">2️⃣</div>
+        <h5>Export Each Report</h5>
+        <p>Go to Reports → Predefined Reports. Export Campaigns, Search Terms, and Time Series as CSV.</p>
+      </div>
+      <div class="tip">
+        <div class="tip-icon">3️⃣</div>
+        <h5>Upload & Analyse</h5>
+        <p>Drop all CSVs here. The more files you upload, the deeper the analysis. Campaigns is the minimum.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD SCREEN ============ -->
+<div id="dashboardScreen">
+  <div class="dash-header">
+    <div class="dash-header-left">
+      <h2 id="dashTitle">Account Analysis</h2>
+      <div class="dash-meta" id="dashMeta"></div>
+    </div>
+    <div class="dash-header-right">
+      <span id="alertPill"></span>
+      <button class="btn btn-ghost btn-sm" onclick="showUpload()">↑ Upload New Data</button>
+    </div>
+  </div>
+
+  <div class="dash-body">
+
+    <!-- KPIs -->
+    <div id="kpis">
+      <div class="section-label">Account Overview</div>
+      <div class="pmax-note" id="pmaxNote" style="display:none">
+        <strong>⚡ Shadow Operator PMax Discount:</strong> PMax campaigns reported ROAS has been discounted 30–40% to reflect attribution inflation. PMax claims the final click of long customer journeys — your true incremental ROAS is materially lower than platform reports.
+      </div>
+      <div class="kpi-row" id="kpiRow"></div>
+    </div>
+
+    <!-- TREND CHARTS -->
+    <div class="grid-2" id="trendsSection" style="display:none">
+      <div class="card">
+        <div class="card-title">Daily Spend Trend</div>
+        <div class="card-sub">Account-level spend over the period</div>
+        <div class="chart-wrap"><canvas id="spendChart" height="180"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Daily Cost Per Conversion</div>
+        <div class="card-sub">Rising = efficiency deteriorating. Watch for spikes.</div>
+        <div class="chart-wrap"><canvas id="cpaChart" height="180"></canvas></div>
+      </div>
+    </div>
+
+    <!-- CAMPAIGN TABLE -->
+    <div id="campaigns">
+      <div class="section-label">Campaign Intelligence</div>
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-title">Spend Distribution</div>
+          <div class="card-sub">Where your budget is going</div>
+          <div class="chart-wrap"><canvas id="spendPieChart" height="220"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cost Per Conversion by Campaign</div>
+          <div class="card-sub">Green = at or below target. Red = above target.</div>
+          <div class="chart-wrap"><canvas id="cpaCampaignChart" height="220"></canvas></div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header">
+          <h3>All Campaigns</h3>
+          <div style="font-size:0.68rem;color:var(--text2)">Click column headers to sort</div>
+        </div>
+        <div class="table-scroll">
+          <table id="campaignTable">
+            <thead><tr>
+              <th onclick="sortTable('campaignTable',0)">Campaign</th>
+              <th onclick="sortTable('campaignTable',1)">Type</th>
+              <th onclick="sortTable('campaignTable',2)">Spend</th>
+              <th onclick="sortTable('campaignTable',3)">Conv.</th>
+              <th onclick="sortTable('campaignTable',4)">Cost/Conv</th>
+              <th onclick="sortTable('campaignTable',5)">vs Target</th>
+              <th onclick="sortTable('campaignTable',6)">Tier</th>
+              <th>Action</th>
+            </tr></thead>
+            <tbody id="campaignTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH TERMS -->
+    <div id="search">
+      <div class="section-label">Search Term Intelligence</div>
+      <div id="searchFlagSection" style="display:none">
+        <div style="font-size:0.78rem;font-weight:600;margin-bottom:8px;color:var(--red)">⚠ Off-Category Spend Detected — Add These as Negatives:</div>
+        <div class="search-flags" id="negativeFlags"></div>
+        <div style="font-size:0.7rem;color:var(--text2);margin-bottom:14px">These search terms are consuming budget with 0 conversions and are completely off-category. This is likely a primary driver of CPC inflation.</div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header">
+          <h3>Top Search Terms</h3>
+          <div style="font-size:0.68rem;color:var(--text2)">Sorted by spend</div>
+        </div>
+        <div class="table-scroll">
+          <table id="searchTable">
+            <thead><tr>
+              <th onclick="sortTable('searchTable',0)">Search Term</th>
+              <th onclick="sortTable('searchTable',1)">Spend</th>
+              <th onclick="sortTable('searchTable',2)">Clicks</th>
+              <th onclick="sortTable('searchTable',3)">Impressions</th>
+              <th onclick="sortTable('searchTable',4)">Conv.</th>
+              <th onclick="sortTable('searchTable',5)">CTR</th>
+              <th>Flag</th>
+            </tr></thead>
+            <tbody id="searchTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPETITIVE -->
+    <div id="competitive">
+      <div class="section-label">Competitive & Auction Insights</div>
+      <div class="table-card" id="auctionSection" style="display:none">
+        <div class="table-card-header"><h3>Auction Insights</h3></div>
+        <div class="table-scroll">
+          <table id="auctionTable">
+            <thead><tr>
+              <th>Competitor</th>
+              <th>Impression Share</th>
+              <th>Overlap Rate</th>
+              <th>Top of Page Rate</th>
+              <th>Position Above Rate</th>
+              <th>Threat</th>
+            </tr></thead>
+            <tbody id="auctionTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="empty-state" id="auctionEmpty">
+        <div class="ei">🏆</div>
+        <p>Upload Auction Insights CSV to see competitor data</p>
+      </div>
+    </div>
+
+    <!-- RECOMMENDATIONS -->
+    <div id="recs">
+      <div class="section-label">Actionable Recommendations</div>
+      <div class="recs-grid" id="recsGrid"></div>
+    </div>
+
+    <!-- BREAKEVEN CALCULATOR -->
+    <div>
+      <div class="section-label">ROAS Breakeven Calculator</div>
+      <div class="calc-panel">
+        <div class="calc-inputs">
+          <div class="form-field">
+            <label>Conversion Rate (%)</label>
+            <input type="number" id="calcConvRate" placeholder="e.g. 7.86" step="0.01" oninput="updateCalc()">
+          </div>
+          <div class="form-field">
+            <label>Avg Order Value</label>
+            <input type="number" id="calcAOV" placeholder="e.g. 99.54" step="0.01" oninput="updateCalc()">
+          </div>
+          <div class="form-field">
+            <label>Target ROAS (%)</label>
+            <input type="number" id="calcTargetROAS" placeholder="e.g. 400" oninput="updateCalc()">
+          </div>
+          <div class="form-field">
+            <label>Current CPC</label>
+            <input type="number" id="calcCPC" placeholder="e.g. 2.85" step="0.01" oninput="updateCalc()">
+          </div>
+        </div>
+        <div class="calc-result" id="calcResult">
+          <div class="calc-result-item"><div class="r-label">Current ROAS</div><div class="r-val" id="cr-roas">—</div></div>
+          <div class="calc-result-item"><div class="r-label">Max CPC for Target</div><div class="r-val" id="cr-maxcpc">—</div></div>
+          <div class="calc-result-item"><div class="r-label">CPC Gap</div><div class="r-val" id="cr-gap">—</div></div>
+          <div class="calc-result-item"><div class="r-label">Status</div><div class="r-val" id="cr-status">—</div></div>
+        </div>
+        <div class="breakeven-chart-wrap">
+          <div class="card-title" style="margin:16px 0 4px">ROAS at Different CPC Levels</div>
+          <div class="card-sub">Green bars = above target ROAS. Red = below target.</div>
+          <canvas id="breakevenChart" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORECAST SIMULATOR -->
+    <div id="forecast">
+      <div class="section-label">What-If Forecast Simulator</div>
+      <div class="forecast-panel">
+        <div class="forecast-inputs">
+          <div class="form-field">
+            <label>Campaign</label>
+            <select id="fc-campaign" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius);font-family:var(--font-ui);font-size:0.8rem;outline:none;"></select>
+          </div>
+          <div class="form-field">
+            <label>Change Type</label>
+            <select id="fc-change" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius);font-family:var(--font-ui);font-size:0.8rem;outline:none;">
+              <option value="troas-up">Raise tROAS (reduce CPC / spend)</option>
+              <option value="troas-down">Lower tROAS (increase volume)</option>
+              <option value="budget-up">Increase Budget (+%)</option>
+              <option value="budget-down">Decrease Budget (-%)</option>
+              <option value="neg-kw">Add Negative Keywords</option>
+              <option value="cpc-target">Apply Max CPC Cap</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Value / Amount</label>
+            <input type="text" id="fc-value" placeholder="e.g. 50 (pts or %)" style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:var(--radius);font-family:var(--font-ui);font-size:0.8rem;outline:none;">
+          </div>
+          <div class="form-field" style="display:flex;align-items:flex-end">
+            <button class="btn btn-primary" style="width:100%;padding:9px" onclick="runForecast()">⚡ Run Forecast</button>
+          </div>
+        </div>
+        <div class="forecast-output" id="forecastOutput">
+          <div class="fo-grid" id="foGrid"></div>
+          <div class="fo-note" id="foNote"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HEALTH SCORE -->
+    <div id="health">
+      <div class="section-label">Account Health Score</div>
+      <div class="card">
+        <div class="health-layout">
+          <div class="health-gauge">
+            <canvas id="healthCanvas" width="200" height="120"></canvas>
+            <div class="health-num" id="healthNum">—</div>
+            <div class="health-label" id="healthLabel">/ 100</div>
+          </div>
+          <div>
+            <div class="health-bars" id="healthBars"></div>
+            <div class="health-actions" id="healthActions"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dash-body -->
+  <footer>
+    <div>AdIntel · Google Ads Intelligence Dashboard · Shadow Operator Framework</div>
+    <div>All data processed locally in your browser · Nothing sent to any server</div>
+  </footer>
+</div><!-- /dashboardScreen -->
+
+</div><!-- /app -->
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const STATE = {
+  clients: {},
+  activeClient: null,
+  files: { campaigns:[], timeseries:[], searches:[], changes:[], extra:[] },
+  data: {},
+  charts: {},
+  currency: 'A$',
+  targetROAS: 400,
+  targetCAC: 25,
+  aov: 100
+};
+
+// ============================================================
+// INIT
+// ============================================================
+window.onload = () => {
+  loadClients();
+  renderSavedClients();
+  animateFades();
+  // pre-fill if client selected
+  updateAnalyzeBtn();
+};
+
+function animateFades() {
+  setTimeout(() => {
+    document.querySelectorAll('.fade').forEach((el,i) => {
+      setTimeout(() => el.classList.add('in'), i * 80);
+    });
+  }, 50);
+}
+
+// ============================================================
+// CLIENT MANAGEMENT (localStorage)
+// ============================================================
+function loadClients() {
+  try {
+    const saved = localStorage.getItem('adintel_clients');
+    if (saved) STATE.clients = JSON.parse(saved);
+  } catch(e) {}
+  rebuildClientSwitcher();
+}
+
+function saveClient() {
+  const name = document.getElementById('clientName').value.trim();
+  if (!name) { alert('Please enter a client name'); return; }
+  STATE.clients[name] = {
+    name,
+    currency: document.getElementById('clientCurrency').value,
+    targetROAS: parseFloat(document.getElementById('clientROAS').value) || 400,
+    targetCAC: parseFloat(document.getElementById('clientCAC').value) || 25,
+    aov: parseFloat(document.getElementById('clientAOV').value) || 100
+  };
+  localStorage.setItem('adintel_clients', JSON.stringify(STATE.clients));
+  STATE.activeClient = name;
+  renderSavedClients();
+  rebuildClientSwitcher();
+  alert(`✅ ${name} saved!`);
+}
+
+function renderSavedClients() {
+  const el = document.getElementById('savedClients');
+  el.innerHTML = '';
+  Object.keys(STATE.clients).forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'saved-client-chip' + (STATE.activeClient === name ? ' active' : '');
+    chip.innerHTML = `<span onclick="loadClient('${name}')">${name}</span><span class="chip-del" onclick="deleteClient('${name}')">✕</span>`;
+    el.appendChild(chip);
+  });
+}
+
+function loadClient(name) {
+  const c = STATE.clients[name];
+  if (!c) return;
+  STATE.activeClient = name;
+  document.getElementById('clientName').value = c.name;
+  document.getElementById('clientCurrency').value = c.currency;
+  document.getElementById('clientROAS').value = c.targetROAS;
+  document.getElementById('clientCAC').value = c.targetCAC;
+  document.getElementById('clientAOV').value = c.aov;
+  renderSavedClients();
+}
+
+function deleteClient(name) {
+  if (!confirm(`Delete ${name}?`)) return;
+  delete STATE.clients[name];
+  if (STATE.activeClient === name) STATE.activeClient = null;
+  localStorage.setItem('adintel_clients', JSON.stringify(STATE.clients));
+  renderSavedClients();
+  rebuildClientSwitcher();
+}
+
+function rebuildClientSwitcher() {
+  const sel = document.getElementById('clientSwitcher');
+  sel.innerHTML = '<option value="">— Select Client —</option>';
+  Object.keys(STATE.clients).forEach(name => {
+    sel.innerHTML += `<option value="${name}" ${STATE.activeClient===name?'selected':''}>${name}</option>`;
+  });
+}
+
+function switchClient(name) {
+  if (!name) return;
+  loadClient(name);
+}
+
+// ============================================================
+// FILE HANDLING
+// ============================================================
+function handleFiles(e, type) {
+  const files = Array.from(e.target.files);
+  STATE.files[type] = files;
+  const zone = document.getElementById('zone-' + type);
+  const count = document.getElementById('count-' + type);
+  if (files.length > 0) {
+    zone.classList.add('uploaded');
+    count.textContent = `✓ ${files.length} file${files.length>1?'s':''} ready`;
+  }
+  updateAnalyzeBtn();
+}
+
+function updateAnalyzeBtn() {
+  const hasFiles = Object.values(STATE.files).some(f => f.length > 0);
+  document.getElementById('analyzeBtn').disabled = !hasFiles;
+}
+
+// ============================================================
+// CSV PARSER
+// ============================================================
+async function parseCSV(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { resolve([]); return; }
+      const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
+      const rows = [];
+      for (let i=1; i<lines.length; i++) {
+        // Handle quoted commas
+        const vals = [];
+        let cur = '', inQ = false;
+        for (let c of lines[i]) {
+          if (c==='"') { inQ=!inQ; }
+          else if (c===',' && !inQ) { vals.push(cur.trim()); cur=''; }
+          else { cur+=c; }
+        }
+        vals.push(cur.trim());
+        if (vals.length < 2) continue;
+        const row = {};
+        headers.forEach((h,idx) => { row[h] = vals[idx] || ''; });
+        rows.push(row);
+      }
+      resolve(rows);
+    };
+    reader.readAsText(file);
+  });
+}
+
+function parseNum(val) {
+  if (!val) return 0;
+  return parseFloat(String(val).replace(/[^0-9.\-]/g,'')) || 0;
+}
+
+function parsePct(val) {
+  if (!val) return 0;
+  return parseFloat(String(val).replace(/[^0-9.\-]/g,'')) || 0;
+}
+
+// ============================================================
+// DETECT FILE TYPE
+// ============================================================
+function detectType(headers) {
+  const h = headers.map(x => x.toLowerCase()).join(' ');
+  if (h.includes('campaign name') && h.includes('cost / conv')) return 'campaigns';
+  if (h.includes('date') && h.includes('cost')) return 'timeseries';
+  if (h.includes('search') && h.includes('impressions') && h.includes('clicks')) return 'searches';
+  if (h.includes('impression share') && h.includes('overlap')) return 'auction';
+  if (h.includes('device') && h.includes('cost')) return 'devices';
+  if (h.includes('age range')) return 'demographics';
+  if (h.includes('gender')) return 'gender';
+  if (h.includes('network') && h.includes('avg. cpc')) return 'networks';
+  if (h.includes('comparison') || h.includes('(comparison)')) return 'changes';
+  if (h.includes('search keyword') && h.includes('match type')) return 'keywords';
+  if (h.includes('optimisation score')) return 'optscore';
+  if (h.includes('hour') && h.includes('impressions')) return 'hourly';
+  return 'unknown';
+}
+
+// ============================================================
+// MAIN ANALYSIS
+// ============================================================
+async function runAnalysis() {
+  // Get client settings
+  STATE.currency = document.getElementById('clientCurrency').value || 'A$';
+  STATE.targetROAS = parseFloat(document.getElementById('clientROAS').value) || 400;
+  STATE.targetCAC = parseFloat(document.getElementById('clientCAC').value) || 25;
+  STATE.aov = parseFloat(document.getElementById('clientAOV').value) || 100;
+  const clientName = document.getElementById('clientName').value || 'Account';
+
+  // Parse all files
+  const allFiles = Object.values(STATE.files).flat();
+  const parsed = {};
+
+  for (const file of allFiles) {
+    const rows = await parseCSV(file);
+    if (!rows.length) continue;
+    const headers = Object.keys(rows[0]);
+    const type = detectType(headers);
+    if (!parsed[type]) parsed[type] = [];
+    parsed[type].push(...rows);
+  }
+
+  STATE.data = parsed;
+
+  // Build dashboard
+  buildDashboard(clientName, parsed);
+}
+
+// ============================================================
+// BUILD DASHBOARD
+// ============================================================
+function buildDashboard(clientName, data) {
+  // Switch screens
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('dashboardScreen').style.display = 'block';
+
+  // Update header
+  const campaigns = data.campaigns || [];
+  const timeseries = data.timeseries || [];
+  const searches = data.searches || [];
+
+  document.getElementById('dashTitle').textContent = clientName + ' · Google Ads Analysis';
+
+  // Date range from timeseries or campaigns
+  let dateRange = 'Date range from uploaded data';
+  if (timeseries.length) {
+    const dates = timeseries.map(r => r['Date'] || r['date']).filter(Boolean);
+    if (dates.length) dateRange = dates[0] + ' → ' + dates[dates.length-1];
+  }
+  document.getElementById('dashMeta').textContent = dateRange + ' · ' + STATE.currency + ' · tROAS Target: ' + STATE.targetROAS + '%';
+
+  // Detect PMax campaigns
+  const hasPMax = campaigns.some(c => (c['Campaign Name']||'').toLowerCase().includes('pmax') || (c['Campaign Name']||'').toLowerCase().includes('performance max'));
+  document.getElementById('pmaxNote').style.display = hasPMax ? 'block' : 'none';
+
+  // KPIs
+  buildKPIs(campaigns, timeseries);
+
+  // Charts
+  if (timeseries.length) {
+    document.getElementById('trendsSection').style.display = 'grid';
+    buildTrendCharts(timeseries);
+  }
+
+  // Campaign table
+  buildCampaignTable(campaigns);
+  buildSpendCharts(campaigns);
+
+  // Search terms
+  if (searches.length) buildSearchTable(searches);
+
+  // Auction
+  if (data.auction && data.auction.length) {
+    document.getElementById('auctionSection').style.display = 'block';
+    document.getElementById('auctionEmpty').style.display = 'none';
+    buildAuctionTable(data.auction);
+  }
+
+  // Recommendations
+  buildRecommendations(campaigns, searches, timeseries, data);
+
+  // Breakeven calc — pre-fill from data
+  if (campaigns.length) {
+    const totalSpend = campaigns.reduce((s,c) => s + parseNum(c['Cost']||c['cost']), 0);
+    const totalConv = campaigns.reduce((s,c) => s + parseNum(c['Conversions']||c['conversions']), 0);
+    if (totalConv > 0) {
+      const blendedCPC = totalSpend / campaigns.reduce((s,c) => s + parseNum(c['Clicks']||c['clicks']||0), 0);
+      document.getElementById('calcConvRate').value = '';
+      document.getElementById('calcAOV').value = STATE.aov || '';
+      document.getElementById('calcTargetROAS').value = STATE.targetROAS || 400;
+      document.getElementById('calcCPC').value = blendedCPC > 0 ? blendedCPC.toFixed(2) : '';
+    }
+  }
+
+  // Forecast campaign list
+  const fcSel = document.getElementById('fc-campaign');
+  fcSel.innerHTML = '';
+  campaigns.filter(c => parseNum(c['Cost']||c['cost']) > 0).forEach(c => {
+    const name = c['Campaign Name'] || 'Unknown';
+    fcSel.innerHTML += `<option value="${name}">${name}</option>`;
+  });
+
+  // Health score
+  buildHealthScore(campaigns, searches, timeseries, data);
+
+  // Scroll to top
+  window.scrollTo(0,0);
+
+  // Alert pill
+  const issues = campaigns.filter(c => {
+    const cpa = parseNum(c['Cost / conv.'] || c['Cost / Conv.'] || c['cost_per_conv'] || 0);
+    return cpa > STATE.targetCAC * 1.5 && parseNum(c['Cost']||c['cost']) > 0;
+  }).length;
+  const ap = document.getElementById('alertPill');
+  if (issues > 0) {
+    ap.className = 'alert-pill';
+    ap.textContent = '⚠ ' + issues + ' campaign' + (issues>1?'s':'')+' over target CPA';
+  } else {
+    ap.className = 'ok-pill';
+    ap.textContent = '✓ Account within targets';
+  }
+}
+
+// ============================================================
+// KPIs
+// ============================================================
+function buildKPIs(campaigns, timeseries) {
+  const totalSpend = campaigns.reduce((s,c) => s + parseNum(c['Cost']||c['cost']), 0);
+  const totalConv = campaigns.reduce((s,c) => s + parseNum(c['Conversions']||c['conversions']), 0);
+  const totalClicks = campaigns.reduce((s,c) => s + parseNum(c['Clicks']||c['clicks']||0), 0);
+
+  const blendedCPA = totalConv > 0 ? totalSpend / totalConv : 0;
+  const blendedCPC = totalClicks > 0 ? totalSpend / totalClicks : 0;
+  const impliedROAS = STATE.aov > 0 && blendedCPA > 0 ? (STATE.aov / blendedCPA) * 100 : 0;
+
+  // Trend from timeseries
+  let spendTrend = '', cpaTrend = '';
+  if (timeseries.length >= 2) {
+    const first = parseNum(timeseries[0]['Cost']||timeseries[0]['cost']);
+    const last = parseNum(timeseries[timeseries.length-1]['Cost']||timeseries[timeseries.length-1]['cost']);
+    const firstCPA = parseNum(timeseries[0]['Cost / conv.']||timeseries[0]['cost_per_conv']||0);
+    const lastCPA = parseNum(timeseries[timeseries.length-1]['Cost / conv.']||timeseries[timeseries.length-1]['cost_per_conv']||0);
+    if (last > first) spendTrend = '<span class="up-bad">↑ Spend increasing</span>';
+    else spendTrend = '<span class="up-good">↓ Spend stable/falling</span>';
+    if (lastCPA > firstCPA) cpaTrend = '<span class="up-bad">↑ CPA deteriorating</span>';
+    else cpaTrend = '<span class="dn-good">↓ CPA improving</span>';
+  }
+
+  const cpaStatus = blendedCPA <= STATE.targetCAC ? 'c-green' : blendedCPA <= STATE.targetCAC * 1.3 ? 'c-amber' : 'c-red';
+  const roasStatus = impliedROAS >= STATE.targetROAS ? 'c-green' : impliedROAS >= STATE.targetROAS * 0.8 ? 'c-amber' : 'c-red';
+
+  const kpis = [
+    { label:'Total Spend', val: fmt(totalSpend), sub: timeseries.length + ' days of data', delta: spendTrend, cls:'c-blue' },
+    { label:'Total Conversions', val: totalConv.toFixed(1), sub: 'Across all campaigns', delta:'', cls:'c-green' },
+    { label:'Blended Cost/Conv', val: fmt(blendedCPA), sub: 'Target: ' + fmt(STATE.targetCAC), delta: cpaTrend, cls: cpaStatus },
+    { label:'Implied ROAS', val: impliedROAS > 0 ? Math.round(impliedROAS)+'%' : '—', sub: 'Target: ' + STATE.targetROAS + '%', delta: impliedROAS >= STATE.targetROAS ? '<span class="up-good">✓ On target</span>' : '<span class="up-bad">⚠ Below target</span>', cls: roasStatus },
+    { label:'Blended CPC', val: fmt(blendedCPC), sub: totalClicks.toLocaleString() + ' total clicks', delta:'', cls:'c-blue' },
+    { label:'Active Campaigns', val: campaigns.filter(c=>parseNum(c['Cost']||c['cost'])>0).length, sub: campaigns.length + ' total', delta:'', cls:'c-purple' },
+  ];
+
+  document.getElementById('kpiRow').innerHTML = kpis.map(k => `
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-val">${k.val}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      ${k.delta ? '<div class="kpi-delta">'+k.delta+'</div>' : ''}
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// TREND CHARTS
+// ============================================================
+function buildTrendCharts(ts) {
+  const labels = ts.map(r => {
+    const d = r['Date']||r['date']||'';
+    return d.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s*/i,'').trim();
+  });
+  const spends = ts.map(r => parseNum(r['Cost']||r['cost']));
+  const cpas = ts.map(r => parseNum(r['Cost / conv.']||r['Cost / Conv.']||r['cost_per_conv']||0));
+
+  destroyChart('spendChart');
+  STATE.charts.spendChart = new Chart(document.getElementById('spendChart'), {
+    type:'line',
+    data:{ labels, datasets:[{ label:'Daily Spend', data:spends, borderColor:'#58a6ff', backgroundColor:'rgba(88,166,255,0.1)', fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#58a6ff' }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:false, ticks:{callback:v=>STATE.currency+Math.round(v)} } } }
+  });
+
+  destroyChart('cpaChart');
+  STATE.charts.cpaChart = new Chart(document.getElementById('cpaChart'), {
+    type:'line',
+    data:{ labels, datasets:[{ label:'Cost/Conv', data:cpas, borderColor:'#f85149', backgroundColor:'rgba(248,81,73,0.1)', fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#f85149' }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:false, ticks:{callback:v=>STATE.currency+v.toFixed(0)} } } }
+  });
+}
+
+// ============================================================
+// CAMPAIGN TABLE + CHARTS
+// ============================================================
+function buildCampaignTable(campaigns) {
+  const tbody = document.getElementById('campaignTableBody');
+  tbody.innerHTML = '';
+
+  const active = campaigns.filter(c => parseNum(c['Cost']||c['cost']) > 0)
+    .sort((a,b) => parseNum(b['Cost']||b['cost']) - parseNum(a['Cost']||a['cost']));
+
+  active.forEach(c => {
+    const name = c['Campaign Name'] || c['Campaign'] || 'Unknown';
+    const spend = parseNum(c['Cost']||c['cost']);
+    const conv = parseNum(c['Conversions']||c['conversions']);
+    const cpa = parseNum(c['Cost / conv.']||c['Cost / Conv.']||c['cost / conv.']||0) || (conv > 0 ? spend/conv : 0);
+
+    const isPMax = /pmax|performance max/i.test(name);
+    const isBrand = /brand/i.test(name);
+    const isNZ = /\bnz\b/i.test(name);
+
+    // Tier logic
+    let tier, tierBadge, action;
+    if (conv === 0 && spend > 10) {
+      tier = 't4'; tierBadge = '<span class="badge b-grey">⚫ Zombie</span>'; action = 'Pause or isolate to Standard Shopping';
+    } else if (cpa <= STATE.targetCAC * 0.85) {
+      tier = 't1'; tierBadge = '<span class="badge b-green">🟢 Scaling Engine</span>'; action = 'Scale — increase budget';
+    } else if (cpa <= STATE.targetCAC * 1.15) {
+      tier = 't1'; tierBadge = '<span class="badge b-green">✓ On Target</span>'; action = 'Hold — monitor frequency';
+    } else if (cpa <= STATE.targetCAC * 1.5) {
+      tier = 't2'; tierBadge = '<span class="badge b-amber">🟡 Optimise</span>'; action = 'Review bidding strategy';
+    } else {
+      tier = 't3'; tierBadge = '<span class="badge b-red">🔴 Drain</span>'; action = 'Raise tROAS or add negatives';
+    }
+
+    const vsTarget = STATE.targetCAC > 0 ? ((cpa - STATE.targetCAC) / STATE.targetCAC * 100) : 0;
+    const vsClass = vsTarget <= 0 ? 'val-g' : vsTarget <= 20 ? 'val-a' : 'val-r';
+    const vsText = vsTarget <= 0 ? '✓ ' + Math.abs(vsTarget).toFixed(0) + '% under' : '↑ ' + vsTarget.toFixed(0) + '% over';
+
+    const typeTag = isPMax ? '<span class="badge b-purple">PMax</span>' : isBrand ? '<span class="badge b-blue">Brand</span>' : isNZ ? '<span class="badge b-grey">NZ</span>' : '<span class="badge b-grey">Search/Shop</span>';
+
+    tbody.innerHTML += `<tr class="${tier}">
+      <td><strong>${name}</strong></td>
+      <td>${typeTag} ${isPMax ? '<span class="badge b-purple" title="30-40% attribution discount applied">⚡ Disc.</span>' : ''}</td>
+      <td>${fmt(spend)}</td>
+      <td>${conv.toFixed(1)}</td>
+      <td class="${cpa > STATE.targetCAC ? 'val-r' : 'val-g'}">${fmt(cpa)}</td>
+      <td class="${vsClass}" style="font-size:0.68rem">${vsText}</td>
+      <td>${tierBadge}</td>
+      <td style="font-size:0.68rem;color:var(--text2);max-width:200px;white-space:normal">${action}</td>
+    </tr>`;
+  });
+
+  if (!active.length) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:24px">No campaign data found</td></tr>';
+}
+
+function buildSpendCharts(campaigns) {
+  const active = campaigns.filter(c => parseNum(c['Cost']||c['cost']) > 0)
+    .sort((a,b) => parseNum(b['Cost']||b['cost']) - parseNum(a['Cost']||a['cost']))
+    .slice(0,10);
+
+  const labels = active.map(c => (c['Campaign Name']||'').substring(0,25));
+  const spends = active.map(c => parseNum(c['Cost']||c['cost']));
+  const cpas = active.map(c => {
+    const conv = parseNum(c['Conversions']||c['conversions']);
+    const spend = parseNum(c['Cost']||c['cost']);
+    return conv > 0 ? spend/conv : 0;
+  });
+
+  const COLORS = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#39d353','#ff7b72','#79c0ff','#a5d6ff','#d2a8ff'];
+
+  destroyChart('spendPieChart');
+  STATE.charts.spendPie = new Chart(document.getElementById('spendPieChart'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:spends, backgroundColor:COLORS, borderWidth:0 }] },
+    options:{ responsive:true, cutout:'65%', plugins:{ legend:{ position:'right', labels:{ font:{size:10}, boxWidth:10, color:'#8b949e' } } } }
+  });
+
+  destroyChart('cpaCampaignChart');
+  STATE.charts.cpaCampaign = new Chart(document.getElementById('cpaCampaignChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ data:cpas, backgroundColor: cpas.map(v => v <= STATE.targetCAC ? 'rgba(63,185,80,0.7)' : v <= STATE.targetCAC*1.3 ? 'rgba(210,153,34,0.7)' : 'rgba(248,81,73,0.7)'), borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{callback:v=>STATE.currency+v.toFixed(0)} }, y:{ ticks:{font:{size:10}} } } }
+  });
+}
+
+// ============================================================
+// SEARCH TERMS TABLE
+// ============================================================
+function buildSearchTable(searches) {
+  // Detect off-category terms (no conversions, high impressions, non-product)
+  const productKeywords = /watch|band|strap|jewel|bracelet|salty/i;
+  const offCategory = searches.filter(s => {
+    const conv = parseNum(s['Conversions']||s['conversions']||0);
+    const imp = parseNum(s['Impressions']||s['impressions']||0);
+    const term = (s['Search']||s['search']||s['Search Term']||'').toLowerCase();
+    return conv === 0 && imp > 200 && !productKeywords.test(term);
+  }).slice(0,12);
+
+  if (offCategory.length) {
+    document.getElementById('searchFlagSection').style.display = 'block';
+    const flagsEl = document.getElementById('negativeFlags');
+    flagsEl.innerHTML = offCategory.map(s => `<span class="search-flag">${s['Search']||s['Search Term']||'?'}</span>`).join('');
+  }
+
+  const tbody = document.getElementById('searchTableBody');
+  tbody.innerHTML = '';
+  const top = searches.slice(0,40);
+  top.forEach(s => {
+    const term = s['Search']||s['Search Term']||s['search']||'';
+    const spend = parseNum(s['Cost']||s['cost']);
+    const clicks = parseNum(s['Clicks']||s['clicks']);
+    const imp = parseNum(s['Impressions']||s['impressions']);
+    const conv = parseNum(s['Conversions']||s['conversions']||0);
+    const ctr = imp > 0 ? (clicks/imp*100).toFixed(1)+'%' : '—';
+    const isOnCat = productKeywords.test(term);
+    const flag = conv === 0 && imp > 500 && !isOnCat
+      ? '<span class="badge b-red">⚠ Negative</span>'
+      : conv > 0 ? '<span class="badge b-green">✓ Converting</span>'
+      : isOnCat ? '<span class="badge b-blue">On-category</span>'
+      : '<span class="badge b-grey">Monitor</span>';
+
+    tbody.innerHTML += `<tr class="${conv > 0 ? 't1' : !isOnCat && imp > 500 ? 't3' : ''}">
+      <td>${term}</td>
+      <td>${fmt(spend)}</td>
+      <td>${clicks}</td>
+      <td>${imp.toLocaleString()}</td>
+      <td class="${conv>0?'val-g':'val-r'}">${conv.toFixed(1)}</td>
+      <td>${ctr}</td>
+      <td>${flag}</td>
+    </tr>`;
+  });
+}
+
+// ============================================================
+// AUCTION TABLE
+// ============================================================
+function buildAuctionTable(auction) {
+  const tbody = document.getElementById('auctionTableBody');
+  tbody.innerHTML = '';
+  const COLORS = ['#3fb950','#58a6ff','#d29922','#bc8cff','#f85149'];
+  auction.forEach((r,i) => {
+    const name = r['Advertiser Name']||r['advertiser']||'Unknown';
+    const isYou = name.toLowerCase() === 'you';
+    const is = r['Impression share']||r['impression_share']||'—';
+    const overlap = r['Overlap rate']||r['overlap_rate']||'—';
+    const top = r['Top of page rate']||r['top_of_page_rate']||'—';
+    const above = r['Position above rate']||r['position_above_rate']||'—';
+    const threat = isYou ? '<span class="badge b-green">You</span>' :
+      parsePct(overlap) > 20 ? '<span class="badge b-amber">⚠ Competitor</span>' : '<span class="badge b-grey">Low</span>';
+    tbody.innerHTML += `<tr ${isYou?'style="background:rgba(63,185,80,0.05)"':''}>
+      <td><span class="comp-badge" style="background:${COLORS[i%COLORS.length]}"></span><strong>${name}</strong></td>
+      <td class="${isYou?'val-g':''}">${is}</td>
+      <td>${overlap}</td>
+      <td>${top}</td>
+      <td>${above}</td>
+      <td>${threat}</td>
+    </tr>`;
+  });
+}
+
+// ============================================================
+// RECOMMENDATIONS ENGINE
+// ============================================================
+function buildRecommendations(campaigns, searches, timeseries, data) {
+  const recs = [];
+  const active = campaigns.filter(c => parseNum(c['Cost']||c['cost']) > 0);
+  const CUR = STATE.currency;
+
+  // 1. CPA over target
+  const drains = active.filter(c => {
+    const conv = parseNum(c['Conversions']||c['conversions']);
+    const spend = parseNum(c['Cost']||c['cost']);
+    const cpa = conv > 0 ? spend/conv : 9999;
+    return cpa > STATE.targetCAC * 1.4 && spend > 50;
+  });
+  if (drains.length) {
+    drains.forEach(c => {
+      const name = c['Campaign Name']||'Campaign';
+      const conv = parseNum(c['Conversions']||c['conversions']);
+      const spend = parseNum(c['Cost']||c['cost']);
+      const cpa = conv > 0 ? spend/conv : 0;
+      const isPMax = /pmax|performance max/i.test(name);
+      recs.push({
+        priority: 1, type:'crit',
+        label:'🔴 Critical — CPA Over Target',
+        title: name + ' is ' + Math.round((cpa/STATE.targetCAC-1)*100) + '% over target CPA',
+        observation: 'This campaign has a cost per conversion of ' + fmt(cpa) + ' against your target of ' + fmt(STATE.targetCAC) + '. It has spent ' + fmt(spend) + ' in the period.',
+        cause: isPMax ? 'PMax is over-extending its bidding into lower-intent or off-category audiences. The algorithm\'s testing budget may be unlocked — bidding aggressively on searches that don\'t convert. Additionally, PMax\'s 30-40% attribution discount means the true ROAS is worse than platform reports.' : 'Campaign is bidding above the efficiency threshold needed to hit your CPA target. Check match types, bidding strategy, and search term quality.',
+        action: isPMax ? 'Incrementally raise tROAS by 50-80 points. Do NOT jump more than 80pts in one move — risks the tROAS Trap where the algorithm restricts to historical buyers only and spend collapses. Monitor CPC daily for 3-5 days.' : 'Review bidding strategy. Consider adding a Max CPC cap. Audit search terms for off-category spend.',
+        outcome: 'CPA should return toward ' + fmt(STATE.targetCAC) + ' as bidding tightens. Expect a short-term volume dip — that\'s normal.',
+        tags: [isPMax ? 'b-purple:PMax' : 'b-grey:Search', 'b-red:High CPA', 'b-amber:tROAS']
+      });
+    });
+  }
+
+  // 2. Off-category search terms
+  const productKW = /watch|band|strap|jewel|bracelet|salty/i;
+  const offCat = searches.filter(s => {
+    const conv = parseNum(s['Conversions']||s['conversions']||0);
+    const imp = parseNum(s['Impressions']||s['impressions']||0);
+    const term = (s['Search']||s['Search Term']||'').toLowerCase();
+    return conv === 0 && imp > 200 && !productKW.test(term);
+  });
+  if (offCat.length >= 3) {
+    const examples = offCat.slice(0,5).map(s=>s['Search']||s['Search Term']||'').join(', ');
+    const offSpend = offCat.reduce((s,r)=>s+parseNum(r['Cost']||r['cost']),0);
+    recs.push({
+      priority: 1, type:'crit',
+      label:'🔴 Critical — Off-Category Budget Bleed',
+      title: offCat.length + ' off-category search terms burning ' + fmt(offSpend),
+      observation: 'Search terms including: ' + examples + ' are consuming ' + fmt(offSpend) + ' with zero conversions. These are completely unrelated to your product category.',
+      cause: 'PMax / broad match keywords are expanding into unrelated categories. The algorithm is testing new audience pockets but finding no purchase intent — inflating CPCs across the campaign in the process.',
+      action: 'Add all off-category terms as negative keywords immediately. In PMax, use the account-level negative keyword list. This is likely a primary driver of your CPC inflation.',
+      outcome: 'Budget redistributes to high-intent searches. CPC should naturally decrease as PMax stops competing for irrelevant placements. Conversion rate should improve.',
+      tags: ['b-red:Negative Keywords', 'b-purple:PMax Control', 'b-amber:CPC Inflation']
+    });
+  }
+
+  // 3. Zombie campaigns
+  const zombies = active.filter(c => parseNum(c['Conversions']||c['conversions']) === 0 && parseNum(c['Cost']||c['cost']) > 20);
+  if (zombies.length) {
+    const zSpend = zombies.reduce((s,c)=>s+parseNum(c['Cost']||c['cost']),0);
+    recs.push({
+      priority: 2, type:'warn',
+      label:'🟡 Warning — Zombie Campaigns',
+      title: zombies.length + ' campaign(s) spent ' + fmt(zSpend) + ' with zero conversions',
+      observation: zombies.map(c=>(c['Campaign Name']||'?')+' ('+fmt(parseNum(c['Cost']||c['cost']))+')').join(', '),
+      cause: 'These campaigns are spending budget without generating any conversions. In PMax, this is often Hero Bias — the algorithm funnels spend to your top-performing campaign and ignores the others.',
+      action: 'Isolate zombie products into dedicated Standard Shopping campaigns with manual CPC. This forces the algorithm to serve these products instead of always defaulting to winners.',
+      outcome: 'Recover hidden revenue from products that PMax is ignoring. Expect a learning phase of 2-3 weeks.',
+      tags: ['b-grey:Zombie', 'b-blue:Hero Bias', 'b-purple:PMax']
+    });
+  }
+
+  // 4. Scaling engines
+  const scalers = active.filter(c => {
+    const conv = parseNum(c['Conversions']||c['conversions']);
+    const spend = parseNum(c['Cost']||c['cost']);
+    const cpa = conv > 0 ? spend/conv : 9999;
+    return cpa <= STATE.targetCAC * 0.85 && spend > 50;
+  });
+  if (scalers.length) {
+    scalers.slice(0,3).forEach(c => {
+      const name = c['Campaign Name']||'Campaign';
+      const conv = parseNum(c['Conversions']||c['conversions']);
+      const spend = parseNum(c['Cost']||c['cost']);
+      const cpa = spend/conv;
+      recs.push({
+        priority: 3, type:'oppo',
+        label:'🟢 Opportunity — Scale This',
+        title: name + ' is hitting ' + Math.round((1-cpa/STATE.targetCAC)*100) + '% under target CPA',
+        observation: 'This campaign is converting at ' + fmt(cpa) + ' — well below your ' + fmt(STATE.targetCAC) + ' target. The unit economics are strong.',
+        cause: 'This campaign has found an efficient audience and bidding equilibrium. The marginal cost of the next conversion is likely still below average — prime scaling territory.',
+        action: 'Increase budget by 20-30% and monitor for 5-7 days. If marginal CPR holds, increase again. Only stop scaling when CPA starts rising toward the target threshold.',
+        outcome: 'More volume at profitable CPA. Scale incrementally to avoid disrupting the algorithm\'s learned audience model.',
+        tags: ['b-green:Scale Signal', 'b-blue:Efficiency']
+      });
+    });
+  }
+
+  // 5. tROAS Trap warning (high ROAS + declining spend trend)
+  if (timeseries.length >= 4) {
+    const recentSpend = timeseries.slice(-2).reduce((s,r)=>s+parseNum(r['Cost']||r['cost']),0)/2;
+    const earlySpend = timeseries.slice(0,2).reduce((s,r)=>s+parseNum(r['Cost']||r['cost']),0)/2;
+    if (recentSpend < earlySpend * 0.7) {
+      recs.push({
+        priority: 2, type:'warn',
+        label:'🟡 Warning — tROAS Feedback Loop Detected',
+        title: 'Spend declining ' + Math.round((1-recentSpend/earlySpend)*100) + '% over the period',
+        observation: 'Daily spend has dropped from ~' + fmt(earlySpend) + ' to ~' + fmt(recentSpend) + '. This pattern often indicates the tROAS Feedback Loop.',
+        cause: 'When tROAS is set too high, the algorithm restricts to historical buyers only. Testing budget zeroes out. The campaign reinforces on the same narrow audience, which shrinks over time as it gets saturated.',
+        action: 'Lower tROAS by 30-50pts to unlock the testing budget. The goal is to let the algorithm explore new audiences again. Monitor for 7 days.',
+        outcome: 'Spend should gradually recover as the algorithm re-opens its audience targeting. Expect a 1-2 week adjustment period.',
+        tags: ['b-amber:tROAS Trap', 'b-purple:PMax', 'b-blue:Spend Recovery']
+      });
+    }
+  }
+
+  // 6. Changes comparison data
+  const changes = data.changes || [];
+  if (changes.length) {
+    const bigIncreases = changes.filter(c => {
+      const curr = parseNum(c['Cost']||c['cost']);
+      const prev = parseNum(c['Cost (Comparison)']||c['cost_comparison']||0);
+      return prev > 0 && curr > prev * 1.5 && curr > 200;
+    });
+    bigIncreases.slice(0,2).forEach(c => {
+      const name = (c['Campaign Name']||'?') + (c['Ad Group Name'] ? ' / '+c['Ad Group Name'] : '');
+      const curr = parseNum(c['Cost']||c['cost']);
+      const prev = parseNum(c['Cost (Comparison)']);
+      const pct = Math.round((curr/prev-1)*100);
+      recs.push({
+        priority: 2, type:'warn',
+        label:'🟡 Warning — Spend Surge Detected',
+        title: name + ' spend up ' + pct + '% vs prior period',
+        observation: 'Spend grew from ' + fmt(prev) + ' to ' + fmt(curr) + ' — a ' + pct + '% increase. This was one of the biggest changes period-over-period.',
+        cause: 'The algorithm has discovered a new audience or product category and is aggressively testing. This can be intentional scaling or uncontrolled expansion into low-converting traffic.',
+        action: 'Check search terms for this campaign to understand what\'s driving the spend surge. If it\'s off-category, add negatives. If it\'s on-category with good ROAS, it may be an organic win.',
+        outcome: 'Depends on conversion quality. Investigate before taking action.',
+        tags: ['b-amber:Spend Surge', 'b-blue:Investigate']
+      });
+    });
+  }
+
+  // Render
+  const grid = document.getElementById('recsGrid');
+  if (!recs.length) {
+    grid.innerHTML = '<div style="color:var(--text2);font-size:0.8rem;padding:20px">No critical issues detected. Upload more data (search terms, time series) for deeper analysis.</div>';
+    return;
+  }
+  recs.sort((a,b)=>a.priority-b.priority);
+  grid.innerHTML = recs.map(r => `
+    <div class="rec-card ${r.type}">
+      <div class="rec-priority">${r.label}</div>
+      <div class="rec-title">${r.title}</div>
+      <div class="rec-row"><div class="rec-row-label">Observation</div><div class="rec-row-text">${r.observation}</div></div>
+      <div class="rec-row"><div class="rec-row-label">Root Cause</div><div class="rec-row-text">${r.cause}</div></div>
+      <div class="rec-row"><div class="rec-row-label">Action</div><div class="rec-row-text"><strong>${r.action}</strong></div></div>
+      <div class="rec-row"><div class="rec-row-label">Expected Outcome</div><div class="rec-row-text">${r.outcome}</div></div>
+      <div class="rec-tags">${(r.tags||[]).map(t=>{ const[c,l]=t.split(':'); return '<span class="badge '+c+'">'+l+'</span>'; }).join('')}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// BREAKEVEN CALCULATOR
+// ============================================================
+function updateCalc() {
+  const convRate = parseFloat(document.getElementById('calcConvRate').value)/100 || 0;
+  const aov = parseFloat(document.getElementById('calcAOV').value) || 0;
+  const targetROAS = parseFloat(document.getElementById('calcTargetROAS').value) || 400;
+  const cpc = parseFloat(document.getElementById('calcCPC').value) || 0;
+
+  if (!convRate || !aov) return;
+
+  const currentROAS = cpc > 0 ? Math.round(convRate * aov / cpc * 100) : 0;
+  const maxCPC = (convRate * aov * 100) / targetROAS;
+  const gap = cpc > 0 ? cpc - maxCPC : 0;
+  const onTarget = cpc <= maxCPC;
+
+  document.getElementById('cr-roas').innerHTML = `<span style="color:${currentROAS>=targetROAS?'var(--green)':'var(--red)'}">${currentROAS}%</span>`;
+  document.getElementById('cr-maxcpc').textContent = STATE.currency + maxCPC.toFixed(2);
+  document.getElementById('cr-gap').innerHTML = `<span style="color:${gap<=0?'var(--green)':'var(--red)'}">${gap<=0?'✓ Under':'↑ Over by '+ STATE.currency+gap.toFixed(2)}</span>`;
+  document.getElementById('cr-status').innerHTML = `<span style="color:${onTarget?'var(--green)':'var(--red)'}">${onTarget?'✓ On Target':'⚠ Below Target'}</span>`;
+
+  // Breakeven chart
+  const cpcs = [];
+  for (let i=0.5; i<=maxCPC*2.5; i+=maxCPC*2.5/10) cpcs.push(parseFloat(i.toFixed(2)));
+  const roasVals = cpcs.map(c => Math.round(convRate * aov / c * 100));
+
+  destroyChart('breakevenChart');
+  STATE.charts.breakeven = new Chart(document.getElementById('breakevenChart'), {
+    type:'bar',
+    data:{
+      labels: cpcs.map(c=>STATE.currency+c.toFixed(2)),
+      datasets:[{ data:roasVals, backgroundColor:roasVals.map(r=>r>=targetROAS?'rgba(63,185,80,0.7)':'rgba(248,81,73,0.7)'), borderRadius:4 }]
+    },
+    options:{ responsive:true, plugins:{legend:{display:false}, annotation:{}}, scales:{ y:{ ticks:{callback:v=>v+'%'}, beginAtZero:true } } }
+  });
+}
+
+// ============================================================
+// FORECAST
+// ============================================================
+function runForecast() {
+  const campaignName = document.getElementById('fc-campaign').value;
+  const changeType = document.getElementById('fc-change').value;
+  const val = parseFloat(document.getElementById('fc-value').value) || 50;
+  const campaigns = STATE.data.campaigns || [];
+  const camp = campaigns.find(c => (c['Campaign Name']||'') === campaignName);
+
+  if (!camp) { alert('Campaign data not found'); return; }
+
+  const spend = parseNum(camp['Cost']||camp['cost']);
+  const conv = parseNum(camp['Conversions']||camp['conversions']);
+  const clicks = parseNum(camp['Clicks']||camp['clicks']||0);
+  const cpa = conv > 0 ? spend/conv : 0;
+  const cpc = clicks > 0 ? spend/clicks : 0;
+  const days = (STATE.data.timeseries||[]).length || 6;
+
+  let projSpend, projConv, projCPA, projCPC, confidence, note;
+
+  if (changeType === 'troas-up') {
+    const reduction = Math.min(0.4, val/500);
+    projCPC = cpc * (1 - reduction);
+    projConv = clicks * (STATE.aov > 0 && projCPC > 0 ? 0.0786 : conv/clicks);
+    projSpend = clicks * projCPC;
+    projCPA = projConv > 0 ? projSpend/projConv : 0;
+    const projROAS = STATE.aov > 0 && projCPA > 0 ? Math.round(STATE.aov/projCPA*100) : 0;
+    confidence = projROAS >= STATE.targetROAS ? '🟢 High' : '🟡 Medium';
+    note = `tROAS increase of ${val}pts should reduce CPCs by ~${(reduction*100).toFixed(0)}%. Projected ROAS: ${projROAS}%. Monitor for 3-5 days — expect a short-term volume dip as the algorithm recalibrates.`;
+  } else if (changeType === 'troas-down') {
+    projCPC = cpc * 1.2;
+    projSpend = spend * 1.25;
+    projConv = conv * 1.1;
+    projCPA = projConv > 0 ? projSpend/projConv : 0;
+    confidence = '🔴 Low';
+    note = 'Lowering tROAS will increase spend and volume but CPA will deteriorate. Only recommended if current tROAS is causing the Feedback Loop (spend declining over time).';
+  } else if (changeType === 'budget-up') {
+    projSpend = spend * (1 + val/100);
+    projConv = conv * (1 + (val/100) * 0.75); // diminishing returns
+    projCPA = projConv > 0 ? projSpend/projConv : 0;
+    projCPC = cpc;
+    confidence = '🟡 Medium';
+    note = `Budget increase of ${val}%. Applied 25% diminishing returns factor — scaling rarely achieves perfect linear conversion growth. Verify CPA stays within target after 7 days.`;
+  } else if (changeType === 'budget-down') {
+    projSpend = spend * (1 - val/100);
+    projConv = conv * (1 - val/100 * 0.85);
+    projCPA = projConv > 0 ? projSpend/projConv : 0;
+    projCPC = cpc;
+    confidence = '🟢 High';
+    note = `Budget reduction of ${val}%. Conversions expected to drop proportionally (with slight CPA improvement as algorithm focuses on higher-intent traffic).`;
+  } else if (changeType === 'neg-kw') {
+    projCPC = cpc * 0.8;
+    projSpend = spend * 0.85;
+    projConv = conv * 0.98;
+    projCPA = projConv > 0 ? projSpend/projConv : 0;
+    projCPC = projCPC;
+    confidence = '🟡 Medium';
+    note = 'Adding negative keywords typically reduces CPCs by 15-25% by eliminating low-quality clicks. Conversion volume should hold or improve as budget concentrates on high-intent terms.';
+  } else {
+    projCPC = val;
+    projConv = clicks * (STATE.aov > 0 ? 0.0786 : conv/Math.max(clicks,1));
+    projSpend = clicks * val;
+    projCPA = projConv > 0 ? projSpend/projConv : 0;
+    confidence = '🟡 Medium';
+    note = `Max CPC cap set at ${STATE.currency}${val}. This directly constrains the bid and prevents CPC overrun — similar to your most efficient Shopping campaign structure.`;
+  }
+
+  const projROAS = STATE.aov > 0 && projCPA > 0 ? Math.round(STATE.aov/projCPA*100) : 0;
+
+  const grid = document.getElementById('foGrid');
+  grid.innerHTML = [
+    { label:'Proj. Spend', val: fmt(projSpend||0), color: '' },
+    { label:'Proj. Conversions', val: (projConv||0).toFixed(1), color: '' },
+    { label:'Proj. CPA', val: fmt(projCPA||0), color: (projCPA||0) <= STATE.targetCAC ? 'var(--green)' : 'var(--red)' },
+    { label:'Proj. CPC', val: fmt(projCPC||0), color: '' },
+    { label:'Proj. ROAS', val: projROAS+'%', color: projROAS >= STATE.targetROAS ? 'var(--green)' : 'var(--red)' },
+    { label:'vs Current CPA', val: cpa>0 ? (projCPA<=cpa?'↓ Improving':'↑ Higher') : '—', color: cpa>0&&projCPA<=cpa?'var(--green)':'var(--red)' },
+  ].map(i=>`<div class="fo-item"><div class="fo-label">${i.label}</div><div class="fo-val" style="${i.color?'color:'+i.color:''}">${i.val}</div></div>`).join('');
+
+  document.getElementById('foNote').innerHTML = `<strong>Confidence: ${confidence}</strong> · ${note}`;
+  document.getElementById('forecastOutput').classList.add('show');
+}
+
+// ============================================================
+// HEALTH SCORE
+// ============================================================
+function buildHealthScore(campaigns, searches, timeseries, data) {
+  const active = campaigns.filter(c => parseNum(c['Cost']||c['cost']) > 0);
+  const scores = {};
+
+  // CPA Efficiency (25%)
+  const overTarget = active.filter(c => {
+    const conv = parseNum(c['Conversions']||c['conversions']);
+    const spend = parseNum(c['Cost']||c['cost']);
+    const cpa = conv > 0 ? spend/conv : 9999;
+    return cpa > STATE.targetCAC * 1.3;
+  }).length;
+  const pctOver = active.length > 0 ? overTarget/active.length : 0;
+  scores.efficiency = Math.round((1 - pctOver) * 100);
+
+  // Zombie campaigns (20%)
+  const zombies = active.filter(c => parseNum(c['Conversions']||c['conversions']) === 0);
+  scores.zombies = Math.round((1 - zombies.length/Math.max(active.length,1)) * 100);
+
+  // Search quality (20%)
+  const productKW = /watch|band|strap|jewel|bracelet|salty/i;
+  const offCat = searches.filter(s => parseNum(s['Conversions']||s['conversions']||0)===0 && parseNum(s['Impressions']||s['impressions']||0)>200 && !productKW.test(s['Search']||s['Search Term']||''));
+  scores.searchQuality = Math.max(0, Math.round(100 - offCat.length * 8));
+
+  // Spend trend (20%)
+  if (timeseries.length >= 3) {
+    const cpas = timeseries.map(r=>parseNum(r['Cost / conv.']||r['Cost / Conv.']||0)).filter(v=>v>0);
+    const improving = cpas.length >= 2 && cpas[cpas.length-1] <= cpas[0] * 1.1;
+    scores.trend = improving ? 80 : 40;
+  } else { scores.trend = 60; }
+
+  // Architecture (15%)
+  const hasBrand = active.some(c=>/brand/i.test(c['Campaign Name']||''));
+  const hasShop = active.some(c=>!/pmax/i.test(c['Campaign Name']||'') && parseNum(c['Cost']||c['cost'])>100);
+  scores.architecture = (hasBrand ? 50 : 0) + (hasShop ? 50 : 0);
+
+  const composite = Math.round(
+    scores.efficiency * 0.25 +
+    scores.zombies * 0.20 +
+    scores.searchQuality * 0.20 +
+    scores.trend * 0.20 +
+    scores.architecture * 0.15
+  );
+
+  // Render gauge
+  const canvas = document.getElementById('healthCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,200,120);
+  ctx.beginPath(); ctx.arc(100,110,80,Math.PI,2*Math.PI); ctx.strokeStyle='#21262d'; ctx.lineWidth=16; ctx.stroke();
+  const angle = Math.PI + (composite/100)*Math.PI;
+  const color = composite >= 70 ? '#3fb950' : composite >= 50 ? '#d29922' : '#f85149';
+  ctx.beginPath(); ctx.arc(100,110,80,Math.PI,angle); ctx.strokeStyle=color; ctx.lineWidth=16; ctx.lineCap='round'; ctx.stroke();
+
+  document.getElementById('healthNum').textContent = composite;
+  document.getElementById('healthNum').style.color = color;
+  document.getElementById('healthLabel').textContent = '/ 100 · ' + (composite>=70?'HEALTHY':composite>=50?'NEEDS ATTENTION':'AT RISK');
+
+  const components = [
+    { name:'CPA Efficiency (25%)', score:scores.efficiency },
+    { name:'No Zombie Campaigns (20%)', score:scores.zombies },
+    { name:'Search Term Quality (20%)', score:scores.searchQuality },
+    { name:'Spend Trend (20%)', score:scores.trend },
+    { name:'Campaign Architecture (15%)', score:scores.architecture },
+  ];
+
+  document.getElementById('healthBars').innerHTML = components.map(c=>{
+    const col = c.score>=70?'var(--green)':c.score>=50?'var(--amber)':'var(--red)';
+    return `<div class="hb-row">
+      <div class="hb-name">${c.name}</div>
+      <div class="hb-track"><div class="hb-fill" style="width:${c.score}%;background:${col}"></div></div>
+      <div class="hb-val" style="color:${col}">${c.score}</div>
+    </div>`;
+  }).join('');
+
+  const actions = [];
+  if (scores.efficiency < 70) actions.push('Fix over-target CPA campaigns → biggest impact');
+  if (scores.zombies < 80) actions.push('Isolate zombie campaigns to Standard Shopping');
+  if (scores.searchQuality < 70) actions.push('Add off-category negative keywords immediately');
+  if (scores.trend < 60) actions.push('Review tROAS settings — potential feedback loop');
+  if (scores.architecture < 80) actions.push('Add dedicated Brand campaign if missing');
+  document.getElementById('healthActions').innerHTML = actions.length
+    ? '<strong>Priority actions:</strong> ' + actions.map((a,i)=>`${i+1}. ${a}`).join(' · ')
+    : '<strong style="color:var(--green)">✓ Account is well structured. Focus on scaling your top performers.</strong>';
+}
+
+// ============================================================
+// TABLE SORT
+// ============================================================
+function sortTable(id, colIdx) {
+  const table = document.getElementById(id);
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const th = table.querySelectorAll('th')[colIdx];
+  const asc = !th.classList.contains('sort-asc');
+  table.querySelectorAll('th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+  th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+  rows.sort((a,b) => {
+    const av = a.cells[colIdx]?.textContent.replace(/[^0-9.\-]/g,'') || '';
+    const bv = b.cells[colIdx]?.textContent.replace(/[^0-9.\-]/g,'') || '';
+    const an = parseFloat(av), bn = parseFloat(bv);
+    if (!isNaN(an) && !isNaN(bn)) return asc ? an-bn : bn-an;
+    return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmt(n) {
+  if (!n || isNaN(n)) return STATE.currency + '0';
+  if (n >= 1000) return STATE.currency + n.toLocaleString('en',{maximumFractionDigits:0});
+  return STATE.currency + parseFloat(n).toFixed(2);
+}
+
+function destroyChart(id) {
+  if (STATE.charts[id]) { STATE.charts[id].destroy(); delete STATE.charts[id]; }
+}
+
+function showUpload() {
+  document.getElementById('uploadScreen').style.display = 'flex';
+  document.getElementById('dashboardScreen').style.display = 'none';
+  animateFades();
+}
+
+// Load sample data for demo
+function loadSampleData() {
+  document.getElementById('clientName').value = 'The Salty Fox';
+  document.getElementById('clientCurrency').value = 'A$';
+  document.getElementById('clientROAS').value = '400';
+  document.getElementById('clientCAC').value = '30';
+  document.getElementById('clientAOV').value = '99.54';
+
+  // Create fake sample CSV blobs and build dashboard
+  STATE.currency = 'A$'; STATE.targetROAS = 400; STATE.targetCAC = 30; STATE.aov = 99.54;
+
+  const sampleCampaigns = [
+    { 'Campaign Name':'PMax - Non Brand - Apple Watch Bands','Cost':'A$6,300.88','Conversions':'190.90','Cost / conv.':'A$33.01','Clicks':'2419' },
+    { 'Campaign Name':'Apple Watch Bands | Exact','Cost':'A$1,184.09','Conversions':'39.39','Cost / conv.':'A$30.06','Clicks':'528' },
+    { 'Campaign Name':'PMax - Non Brand - NZ','Cost':'A$1,101.16','Conversions':'27.76','Cost / conv.':'A$39.67','Clicks':'588' },
+    { 'Campaign Name':'Google Shopping - Other Products','Cost':'A$963.22','Conversions':'42.73','Cost / conv.':'A$22.54','Clicks':'594' },
+    { 'Campaign Name':'Google Shopping - 400% ROAS, $1.21 Max CPC','Cost':'A$681.02','Conversions':'31.97','Cost / conv.':'A$21.30','Clicks':'520' },
+    { 'Campaign Name':'NZ - Google Shopping - Other Products - NEW','Cost':'A$539.77','Conversions':'7.00','Cost / conv.':'A$77.11','Clicks':'319' },
+    { 'Campaign Name':'NZ - Apple Watch Bands','Cost':'A$313.46','Conversions':'18.65','Cost / conv.':'A$16.80','Clicks':'280' },
+    { 'Campaign Name':'Brand - Performance Max - AU','Cost':'A$297.53','Conversions':'45.97','Cost / conv.':'A$6.47','Clicks':'320' },
+    { 'Campaign Name':'The Salty Fox - Brand - Manual CPC','Cost':'A$87.26','Conversions':'68.96','Cost / conv.':'A$1.27','Clicks':'490' },
+    { 'Campaign Name':'PMax - Non Brand - Stands','Cost':'A$52.52','Conversions':'0','Cost / conv.':'A$0.00','Clicks':'42' },
+  ];
+  const sampleTS = [
+    { 'Date':'Sun, 1 Mar 2026','Cost':'A$2,669','Conversions':'150.65','Cost / conv.':'A$17.72','Clicks':'1643' },
+    { 'Date':'Mon, 2 Mar 2026','Cost':'A$2,098','Conversions':'102.11','Cost / conv.':'A$20.55','Clicks':'1408' },
+    { 'Date':'Tue, 3 Mar 2026','Cost':'A$2,121','Conversions':'90.03','Cost / conv.':'A$23.56','Clicks':'1350' },
+    { 'Date':'Wed, 4 Mar 2026','Cost':'A$2,488','Conversions':'86.42','Cost / conv.':'A$28.79','Clicks':'1397' },
+    { 'Date':'Thu, 5 Mar 2026','Cost':'A$2,590','Conversions':'67.58','Cost / conv.':'A$38.33','Clicks':'1463' },
+    { 'Date':'Fri, 6 Mar 2026','Cost':'A$1,612','Conversions':'54.55','Cost / conv.':'A$29.54','Clicks':'922' },
+  ];
+  const sampleSearches = [
+    { 'Search':'apple watch bands','Cost':'A$734','Clicks':'393','Impressions':'7175','Conversions':'12' },
+    { 'Search':'apple watch band','Cost':'A$309','Clicks':'166','Impressions':'4255','Conversions':'8' },
+    { 'Search':'burga','Cost':'A$37','Clicks':'45','Impressions':'6109','Conversions':'0' },
+    { 'Search':'burga phone case','Cost':'A$16','Clicks':'22','Impressions':'3729','Conversions':'0' },
+    { 'Search':'phone cases','Cost':'A$33','Clicks':'58','Impressions':'2894','Conversions':'0' },
+    { 'Search':'laptop case','Cost':'A$17','Clicks':'23','Impressions':'2313','Conversions':'0' },
+    { 'Search':'iphone 17 case','Cost':'A$28','Clicks':'22','Impressions':'2163','Conversions':'0' },
+    { 'Search':'laptop sleeve','Cost':'A$28','Clicks':'25','Impressions':'2132','Conversions':'0' },
+    { 'Search':'apple watch bands australia','Cost':'A$162','Clicks':'70','Impressions':'712','Conversions':'5' },
+    { 'Search':'salty fox','Cost':'A$66','Clicks':'284','Impressions':'1383','Conversions':'18' },
+    { 'Search':'strapify','Cost':'A$15','Clicks':'6','Impressions':'212','Conversions':'0' },
+    { 'Search':'bandify','Cost':'A$62','Clicks':'35','Impressions':'907','Conversions':'0' },
+  ];
+  const sampleAuction = [
+    { 'Advertiser Name':'You','Impression share':'20.24%','Overlap rate':'—','Top of page rate':'89.97%','Position above rate':'—' },
+    { 'Advertiser Name':'strapify.com.au','Impression share':'10.69%','Overlap rate':'26.41%','Top of page rate':'92.43%','Position above rate':'26.71%' },
+    { 'Advertiser Name':'amazon.com.au','Impression share':'10.30%','Overlap rate':'19.82%','Top of page rate':'91.94%','Position above rate':'25.13%' },
+    { 'Advertiser Name':'istrap.com.au','Impression share':'<10%','Overlap rate':'29.68%','Top of page rate':'91.12%','Position above rate':'27.64%' },
+  ];
+  const sampleChanges = [
+    { 'Campaign Name':'PMax - Non Brand - Apple Watch Bands','Cost':'A$6,300','Cost (Comparison)':'A$4,147','Clicks':'2419','Clicks (Comparison)':'2139' },
+    { 'Campaign Name':'NZ - Google Shopping - Other Products - NEW','Ad Group Name':'Phone Cases','Cost':'A$346','Cost (Comparison)':'A$40','Clicks':'319','Clicks (Comparison)':'42' },
+  ];
+
+  STATE.data = { campaigns: sampleCampaigns, timeseries: sampleTS, searches: sampleSearches, auction: sampleAuction, changes: sampleChanges };
+  buildDashboard('The Salty Fox', STATE.data);
+}
+
+// CHART DEFAULTS
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#21262d';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 11;
+</script>
+</body>
+</html>
